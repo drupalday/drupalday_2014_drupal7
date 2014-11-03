@@ -1,0 +1,99 @@
+<?php
+
+/**
+ *  Implements hook_menu().
+ */
+function weather_menu() {
+  $items = array();
+
+  $items['weather'] = array(
+    'title' => 'Weather',
+    'page callback' => 'weather_view',
+    'access callback' => TRUE,
+    'file' => 'includes/weather.pages.inc',
+  );
+
+  $items['admin/config/services/weather'] = array(
+    'title' => 'Weather',
+    'description' => 'Configure the weather service.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('weather_configure'),
+    'access arguments' => array('configure weather'),
+    'file' => 'includes/weather.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ *  Implements hook_permission().
+ */
+function weather_permission() {
+  return array(
+    'configure weather' => array(
+      'title' => t('Configure weather'),
+      'description' => t('Configure the weather service.'),
+    ),
+  );
+}
+
+/**
+ *  Implements hook_block_info().
+ */
+function weather_block_info() {
+  $blocks = array();
+
+  $blocks['weather'] = array(
+    'info' => 'Weather',
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  return $blocks;
+}
+
+/**
+ *  Implements hook_block_view().
+ */
+function weather_block_view($delta = '') {
+  $block = array();
+
+  switch($delta) {
+    case 'weather':
+      $block['subject'] = t('Current weather');
+
+      $city = variable_get('weather_city', 'Milano');
+      $data = weather_get_weather($city);
+
+      $block['content'] = array(
+        '#theme' => 'weather',
+        '#data' => $data,
+      );
+  }
+
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function weather_theme() {
+  return array(
+    'weather' => array(
+      'template' => 'weather',
+      'variables' => array('data' => NULL),
+    ),
+  );
+}
+
+/* API */
+
+/**
+ * @param $city
+ *
+ * @return mixed
+ */
+function weather_get_weather($city) {
+  $response = drupal_http_request('http://api.openweathermap.org/data/2.5/weather?q=' . $city . ',it&units=metric');
+
+  return json_decode($response->data);
+}
