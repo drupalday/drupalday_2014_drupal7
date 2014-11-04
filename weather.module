@@ -1,5 +1,7 @@
 <?php
 
+DEFINE('LAST_RETRIEVED_TIMESTAMP', 'weather_last_retrieved_timestamp');
+
 /**
  *  Implements hook_menu().
  */
@@ -57,16 +59,18 @@ function weather_block_info() {
 function weather_block_view($delta = '') {
   $block = array();
 
-  switch($delta) {
+  switch ($delta) {
     case 'weather':
       $block['subject'] = t('Current weather');
 
       $city = variable_get('weather_city', 'Milano');
       $data = weather_get_weather($city);
+      $timestamp = variable_get(LAST_RETRIEVED_TIMESTAMP);
 
       $block['content'] = array(
         '#theme' => 'weather',
         '#data' => $data,
+        '#timestamp' => $timestamp,
       );
   }
 
@@ -80,7 +84,7 @@ function weather_theme() {
   return array(
     'weather' => array(
       'template' => 'weather',
-      'variables' => array('data' => NULL),
+      'variables' => array('data' => NULL, 'timestamp' => NULL),
     ),
   );
 }
@@ -93,7 +97,17 @@ function weather_theme() {
  * @return mixed
  */
 function weather_get_weather($city) {
-  $response = drupal_http_request('http://api.openweathermap.org/data/2.5/weather?q=' . $city . ',it&units=metric');
+  if ($data = cache_get('weather:' . $city)) {
+    return $data->data;
+  }
+  else {
+    $response = drupal_http_request('http://api.openweathermap.org/data/2.5/weather?q=' . $city . ',it&units=metric');
 
-  return json_decode($response->data);
+    $data = json_decode($response->data);
+    cache_set('weather:' . $city, $data);
+
+    variable_set(LAST_RETRIEVED_TIMESTAMP, time());
+
+    return $data;
+  }
 }

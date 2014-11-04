@@ -3,3 +3,4 @@ description = 'Weather example module.'
 package = Example
 version = 7.x-1.x-dev
 core = 7.x
+configure = admin/config/services/weather
