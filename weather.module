@@ -64,13 +64,16 @@ function weather_block_view($delta = '') {
       $block['subject'] = t('Current weather');
 
       $city = variable_get('weather_city', 'Milano');
-      $data = weather_get_weather($city);
       $timestamp = variable_get(LAST_RETRIEVED_TIMESTAMP);
 
       $block['content'] = array(
         '#theme' => 'weather',
-        '#data' => $data,
         '#timestamp' => $timestamp,
+        '#city' => $city,
+        '#pre_render' => array('current_weather_cache_pre_render'),
+        '#cache' => array(
+          'keys' => array('weather', $city),
+        ),
       );
   }
 
@@ -110,4 +113,15 @@ function weather_get_weather($city) {
 
     return $data;
   }
+}
+
+/* private functions */
+
+/**
+ * @param $element
+ */
+function current_weather_cache_pre_render($element) {
+  $element['#data'] = weather_get_weather($element['#city']);
+
+  return $element;
 }

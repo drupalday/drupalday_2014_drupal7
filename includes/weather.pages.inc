@@ -5,12 +5,15 @@
  */
 function weather_view() {
   $city = variable_get('weather_city', 'Milano');
-  $data = weather_get_weather($city);
   $timestamp = variable_get(LAST_RETRIEVED_TIMESTAMP);
 
   return array(
     '#theme' => 'weather',
-    '#data' => $data,
     '#timestamp' => $timestamp,
+    '#city' => $city,
+    '#pre_render' => array('current_weather_cache_pre_render'),
+    '#cache' => array(
+      'keys' => array('weather', $city),
+    ),
   );
 }
